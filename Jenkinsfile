@@ -84,44 +84,29 @@ pipeline {
 stage("Publish to Nexus Repository Manager") {
     steps {
         script {
-            def groupId = sh(script: "grep -m 1 '<groupId>' pom.xml | sed 's/.*<groupId>\\(.*\\)<\\/groupId>.*/\\1/'", returnStdout: true).trim()
-            def artifactId = sh(script: "grep -m 1 '<artifactId>' pom.xml | sed 's/.*<artifactId>\\(.*\\)<\\/artifactId>.*/\\1/'", returnStdout: true).trim()
-            def version = sh(script: "grep -m 1 '<version>' pom.xml | sed 's/.*<version>\\(.*\\)<\\/version>.*/\\1/'", returnStdout: true).trim()
-            def packaging = sh(script: "grep -m 1 '<packaging>' pom.xml | sed 's/.*<packaging>\\(.*\\)<\\/packaging>.*/\\1/'", returnStdout: true).trim()
-
-            echo "Parsed POM - Group ID: ${groupId}, Artifact ID: ${artifactId}, Version: ${version}, Packaging: ${packaging}"
-
-            // Find artifact file
-            def filesByGlob = findFiles(glob: "target/*.${packaging}")
-            if (filesByGlob.length == 0) {
-                error "No artifacts found in the target directory!"
-            }
-
-            def artifactPath = filesByGlob[0].path
-            if (!fileExists(artifactPath)) {
-                error "Artifact file not found at path: ${artifactPath}"
-            }
-
-            // Upload artifact to Nexus
+            // Ensure variables like NEXUS_URL, NEXUS_CREDENTIAL_ID, and NEXUS_REPOSITORY are defined in your Jenkins pipeline.
             nexusArtifactUploader(
-                nexusVersion: NEXUS_VERSION,
-                protocol: NEXUS_PROTOCOL,
-                nexusUrl: NEXUS_URL,
-                groupId: groupId,
-                version: ARTVERSION,
-                repository: NEXUS_REPOSITORY,
-                credentialsId: NEXUS_CREDENTIAL_ID,
+                nexusVersion: 'nexus3',
+                protocol: 'http',
+                nexusUrl: "${NEXUS_URL}",
+                groupId: "com.visualpathit",
+                version: "v2",
+                repository: "${NEXUS_REPOSITORY}",
+                credentialsId: "${NEXUS_CREDENTIAL_ID}",
                 artifacts: [
-                    [artifactId: artifactId, classifier: '', file: artifactPath, type: packaging],
-                    [artifactId: artifactId, classifier: '', file: "pom.xml", type: "pom"]
+                    [artifactId: "vprofile",
+                     classifier: '',
+                     file: "target/vprofile.war",
+                     type: "war"],
+                    [artifactId: "vprofile",
+                     classifier: '',
+                     file: "pom.xml",
+                     type: "pom"]
                 ]
             )
         }
     }
 }
-
-
-
 
 
     }
