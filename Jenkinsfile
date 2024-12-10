@@ -84,64 +84,42 @@ pipeline {
 stage("Publish to Nexus Repository Manager") {
     steps {
         script {
-            try {
-                // Read and parse the POM file
-                def pomContent = readFile(file: "pom.xml")
-                def pomXml = new XmlSlurper().parseText(pomContent)
+            def groupId = sh(script: "grep -m 1 '<groupId>' pom.xml | sed 's/.*<groupId>\\(.*\\)<\\/groupId>.*/\\1/'", returnStdout: true).trim()
+            def artifactId = sh(script: "grep -m 1 '<artifactId>' pom.xml | sed 's/.*<artifactId>\\(.*\\)<\\/artifactId>.*/\\1/'", returnStdout: true).trim()
+            def version = sh(script: "grep -m 1 '<version>' pom.xml | sed 's/.*<version>\\(.*\\)<\\/version>.*/\\1/'", returnStdout: true).trim()
+            def packaging = sh(script: "grep -m 1 '<packaging>' pom.xml | sed 's/.*<packaging>\\(.*\\)<\\/packaging>.*/\\1/'", returnStdout: true).trim()
 
-                // Extract values from the POM
-                def groupId = pomXml.groupId.text()
-                def artifactId = pomXml.artifactId.text()
-                def version = pomXml.version.text()
-                def packaging = pomXml.packaging.text()
+            echo "Parsed POM - Group ID: ${groupId}, Artifact ID: ${artifactId}, Version: ${version}, Packaging: ${packaging}"
 
-                echo "Parsed POM - Group ID: ${groupId}, Artifact ID: ${artifactId}, Version: ${version}, Packaging: ${packaging}"
-
-                // Find the artifact file
-                def filesByGlob = findFiles(glob: "target/*.${packaging}")
-                if (filesByGlob.length == 0) {
-                    error "No artifacts found in the target directory!"
-                }
-
-                def artifactPath = filesByGlob[0].path
-                def artifactExists = fileExists artifactPath
-                if (!artifactExists) {
-                    error "Artifact file not found at path: ${artifactPath}"
-                }
-
-                echo "Uploading artifact: ${artifactPath}"
-
-                // Upload artifacts to Nexus
-                nexusArtifactUploader(
-                    nexusVersion: NEXUS_VERSION,
-                    protocol: NEXUS_PROTOCOL,
-                    nexusUrl: NEXUS_URL,
-                    groupId: groupId,
-                    version: ARTVERSION,
-                    repository: NEXUS_REPOSITORY,
-                    credentialsId: NEXUS_CREDENTIAL_ID,
-                    artifacts: [
-                        [
-                            artifactId: artifactId,
-                            classifier: '',
-                            file: artifactPath,
-                            type: packaging
-                        ],
-                        [
-                            artifactId: artifactId,
-                            classifier: '',
-                            file: "pom.xml",
-                            type: "pom"
-                        ]
-                    ]
-                )
-            } catch (Exception e) {
-                echo "Error during pipeline execution: ${e.message}"
-                throw e
+            // Find artifact file
+            def filesByGlob = findFiles(glob: "target/*.${packaging}")
+            if (filesByGlob.length == 0) {
+                error "No artifacts found in the target directory!"
             }
+
+            def artifactPath = filesByGlob[0].path
+            if (!fileExists(artifactPath)) {
+                error "Artifact file not found at path: ${artifactPath}"
+            }
+
+            // Upload artifact to Nexus
+            nexusArtifactUploader(
+                nexusVersion: NEXUS_VERSION,
+                protocol: NEXUS_PROTOCOL,
+                nexusUrl: NEXUS_URL,
+                groupId: groupId,
+                version: ARTVERSION,
+                repository: NEXUS_REPOSITORY,
+                credentialsId: NEXUS_CREDENTIAL_ID,
+                artifacts: [
+                    [artifactId: artifactId, classifier: '', file: artifactPath, type: packaging],
+                    [artifactId: artifactId, classifier: '', file: "pom.xml", type: "pom"]
+                ]
+            )
         }
     }
 }
+
 
 
 
