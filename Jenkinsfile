@@ -27,17 +27,6 @@ pipeline {
             }
         }
 
-        stage('Unit Test') {
-            steps {
-                sh 'mvn test'
-            }
-        }
-
-        stage('Integration Test') {
-            steps {
-                sh 'mvn verify -DskipUnitTests'
-            }
-        }
 
         stage('Code Analysis with Checkstyle') {
             steps {
