@@ -84,7 +84,6 @@ pipeline {
 stage("Publish to Nexus Repository Manager") {
     steps {
         script {
-            // Ensure the correct file path to the WAR file
             nexusArtifactUploader(
                 nexusVersion: 'nexus3',
                 protocol: 'http',
@@ -96,17 +95,18 @@ stage("Publish to Nexus Repository Manager") {
                 artifacts: [
                     [artifactId: "vprofile",
                      classifier: '',
-                     file: "${WORKSPACE}/target/vprofile.war",  // Correct file path
+                     file: "target/vprofile-v2.war",  // Updated file name
                      type: "war"],
                     [artifactId: "vprofile",
                      classifier: '',
-                     file: "${WORKSPACE}/pom.xml",
+                     file: "pom.xml",
                      type: "pom"]
                 ]
             )
         }
     }
 }
+
 
 
     }
