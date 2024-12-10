@@ -1,28 +1,28 @@
 pipeline {
-    
-	agent any
-	    options {
+
+    agent any
+
+    options {
         skipDefaultCheckout()
     }
-	
-	tools {
+
+    tools {
         maven "maven"
-	
     }
-	
+
     environment {
         NEXUS_VERSION = "nexus3"
         NEXUS_PROTOCOL = "http"
         NEXUS_URL = "65.2.143.128:8081"
         NEXUS_REPOSITORY = "demo-release"
-	NEXUS_REPO_ID    = "demo-release"
+        NEXUS_REPO_ID = "demo-release"
         NEXUS_CREDENTIAL_ID = "nexus_credentials"
         ARTVERSION = "${env.BUILD_ID}"
     }
-	
-    stages{
-        
-        stage('BUILD'){
+
+    stages {
+
+        stage('BUILD') {
             steps {
                 sh 'mvn clean install -DskipTests'
             }
@@ -34,19 +34,19 @@ pipeline {
             }
         }
 
-	// stage('UNIT TEST'){
- //            steps {
- //                sh 'mvn test'
- //            }
- //        }
+        stage('UNIT TEST') {
+            steps {
+                sh 'mvn test'
+            }
+        }
 
-	// stage('INTEGRATION TEST'){
- //            steps {
- //                sh 'mvn verify -DskipUnitTests'
- //            }
- //        }
-		
-        stage ('CODE ANALYSIS WITH CHECKSTYLE'){
+        stage('INTEGRATION TEST') {
+            steps {
+                sh 'mvn verify -DskipUnitTests'
+            }
+        }
+
+        stage('CODE ANALYSIS WITH CHECKSTYLE') {
             steps {
                 sh 'mvn checkstyle:checkstyle'
             }
@@ -58,58 +58,49 @@ pipeline {
         }
 
         stage('CODE ANALYSIS with SONARQUBE') {
-          
-		  environment {
-             scannerHome = tool 'sonarscanner'
-          }
-
-          steps {
-            withSonarQubeEnv('sonarserver') {
-               sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                   -Dsonar.projectName=vprofile-repo \
-                   -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+            environment {
+                scannerHome = tool 'sonarscanner'
             }
-
-            // timeout(time: 10, unit: 'MINUTES') {
-            //    waitForQualityGate abortPipeline: true
-            // }
-          }
+            steps {
+                withSonarQubeEnv('sonarserver') {
+                    sh '''${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=vprofile \
+                        -Dsonar.projectName=vprofile-repo \
+                        -Dsonar.projectVersion=1.0 \
+                        -Dsonar.sources=src/ \
+                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+                }
+            }
         }
 
-stage("Publish to Nexus Repository Manager") {
-    steps {
-        script {
-            nexusArtifactUploader(
-                nexusVersion: 'nexus3',
-                protocol: 'http',
-                nexusUrl: "${NEXUS_URL}",
-                groupId: "com.visualpathit",
-                version: "v2",
-                repository: "${NEXUS_REPOSITORY}",
-                credentialsId: "${NEXUS_CREDENTIAL_ID}",
-                artifacts: [
-                    [artifactId: "vprofile",
-                     classifier: '',
-                     file: "target/vprofile-v2.war",  // Updated file name
-                     type: "war"],
-                    [artifactId: "vprofile",
-                     classifier: '',
-                     file: "pom.xml",
-                     type: "pom"]
-                ]
-            )
+        stage('Publish to Nexus Repository Manager') {
+            steps {
+                script {
+                    nexusArtifactUploader(
+                        nexusVersion: 'nexus3',
+                        protocol: 'http',
+                        nexusUrl: "${NEXUS_URL}",
+                        groupId: "com.visualpathit",
+                        version: "v2",
+                        repository: "${NEXUS_REPOSITORY}",
+                        credentialsId: "${NEXUS_CREDENTIAL_ID}",
+                        artifacts: [
+                            [artifactId: "vprofile",
+                             classifier: '',
+                             file: "target/vprofile-v2.war",
+                             type: "war"],
+                            [artifactId: "vprofile",
+                             classifier: '',
+                             file: "pom.xml",
+                             type: "pom"]
+                        ]
+                    )
+                }
+            }
         }
-    }
-}
-
-
 
     }
-
-
 }
