@@ -84,7 +84,7 @@ pipeline {
 stage("Publish to Nexus Repository Manager") {
     steps {
         script {
-            // Ensure variables like NEXUS_URL, NEXUS_CREDENTIAL_ID, and NEXUS_REPOSITORY are defined in your Jenkins pipeline.
+            // Ensure the correct file path to the WAR file
             nexusArtifactUploader(
                 nexusVersion: 'nexus3',
                 protocol: 'http',
@@ -96,11 +96,11 @@ stage("Publish to Nexus Repository Manager") {
                 artifacts: [
                     [artifactId: "vprofile",
                      classifier: '',
-                     file: "target/vprofile.war",
+                     file: "${WORKSPACE}/target/vprofile.war",  // Correct file path
                      type: "war"],
                     [artifactId: "vprofile",
                      classifier: '',
-                     file: "pom.xml",
+                     file: "${WORKSPACE}/pom.xml",
                      type: "pom"]
                 ]
             )
