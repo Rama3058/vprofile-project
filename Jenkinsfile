@@ -41,10 +41,10 @@ pipeline {
 
         stage('Code Analysis with SonarQube') {
             environment {
-                scannerHome = tool 'sonarscanner4'
+                scannerHome = tool 'sonarscanner'
             }
             steps {
-                withSonarQubeEnv('sonar-pro') {
+                withSonarQubeEnv('SONAR_TOKEN') {
                     sh """
                         ${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -84,7 +84,7 @@ pipeline {
                             groupId: pom.groupId,
                             version: ARTVERSION,
                             repository: NEXUS_REPOSITORY,
-                            credentialsId: NEXUS_CREDENTIAL_ID,
+                            credentialsId: nexus_credentials,
                             artifacts: [
                                 [artifactId: pom.artifactId,
                                  classifier: '',
