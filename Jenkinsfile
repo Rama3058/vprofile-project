@@ -85,31 +85,56 @@ stage("Publish to Nexus Repository Manager") {
     steps {
         script {
             try {
-                pom = readMavenPom file: "pom.xml"
-                echo "POM File Read: ${pom.groupId}:${pom.artifactId}:${pom.version}"
-                filesByGlob = findFiles(glob: "target/*.${pom.packaging}")
+                // Read and parse the POM file
+                def pomContent = readFile(file: "pom.xml")
+                def pomXml = new XmlSlurper().parseText(pomContent)
+
+                // Extract values from the POM
+                def groupId = pomXml.groupId.text()
+                def artifactId = pomXml.artifactId.text()
+                def version = pomXml.version.text()
+                def packaging = pomXml.packaging.text()
+
+                echo "Parsed POM - Group ID: ${groupId}, Artifact ID: ${artifactId}, Version: ${version}, Packaging: ${packaging}"
+
+                // Find the artifact file
+                def filesByGlob = findFiles(glob: "target/*.${packaging}")
                 if (filesByGlob.length == 0) {
                     error "No artifacts found in the target directory!"
                 }
-                artifactPath = filesByGlob[0].path
-                artifactExists = fileExists artifactPath
-                if (artifactExists) {
-                    nexusArtifactUploader(
-                        nexusVersion: NEXUS_VERSION,
-                        protocol: NEXUS_PROTOCOL,
-                        nexusUrl: NEXUS_URL,
-                        groupId: pom.groupId,
-                        version: ARTVERSION,
-                        repository: NEXUS_REPOSITORY,
-                        credentialsId: NEXUS_CREDENTIAL_ID,
-                        artifacts: [
-                            [artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging],
-                            [artifactId: pom.artifactId, classifier: '', file: "pom.xml", type: "pom"]
-                        ]
-                    )
-                } else {
-                    error "Artifact not found: ${artifactPath}"
+
+                def artifactPath = filesByGlob[0].path
+                def artifactExists = fileExists artifactPath
+                if (!artifactExists) {
+                    error "Artifact file not found at path: ${artifactPath}"
                 }
+
+                echo "Uploading artifact: ${artifactPath}"
+
+                // Upload artifacts to Nexus
+                nexusArtifactUploader(
+                    nexusVersion: NEXUS_VERSION,
+                    protocol: NEXUS_PROTOCOL,
+                    nexusUrl: NEXUS_URL,
+                    groupId: groupId,
+                    version: ARTVERSION,
+                    repository: NEXUS_REPOSITORY,
+                    credentialsId: NEXUS_CREDENTIAL_ID,
+                    artifacts: [
+                        [
+                            artifactId: artifactId,
+                            classifier: '',
+                            file: artifactPath,
+                            type: packaging
+                        ],
+                        [
+                            artifactId: artifactId,
+                            classifier: '',
+                            file: "pom.xml",
+                            type: "pom"
+                        ]
+                    ]
+                )
             } catch (Exception e) {
                 echo "Error during pipeline execution: ${e.message}"
                 throw e
@@ -117,6 +142,7 @@ stage("Publish to Nexus Repository Manager") {
         }
     }
 }
+
 
 
 
