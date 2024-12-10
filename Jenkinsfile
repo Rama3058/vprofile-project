@@ -22,7 +22,7 @@ pipeline {
             post {
                 success {
                     echo 'Build completed successfully. Archiving artifacts...'
-                    archiveArtifacts artifacts: '**/target/*.{war,jar}'
+                    archiveArtifacts artifacts: '**/target/*.war, **/target/*.jar'
                 }
             }
         }
@@ -78,12 +78,12 @@ pipeline {
             steps {
                 script {
                     def pom = readMavenPom file: "pom.xml"
-                    def filesByGlob = findFiles(glob: "target/*.{war,jar}")
-                    
+                    def filesByGlob = findFiles(glob: "target/*.war") + findFiles(glob: "target/*.jar")
+
                     if (filesByGlob.isEmpty()) {
                         error "No WAR or JAR artifact found in the target directory!"
                     }
-                    
+
                     filesByGlob.each { file ->
                         def artifactPath = file.path
                         echo "Found artifact: ${artifactPath}, Group ID: ${pom.groupId}, Packaging: ${pom.packaging}, Version: ${pom.version}"
