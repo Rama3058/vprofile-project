@@ -2,9 +2,9 @@ pipeline {
 
     agent any
 
-    options {
-        skipDefaultCheckout()
-    }
+    // options {
+    //     skipDefaultCheckout()
+    // }
 
     tools {
         maven "maven"
