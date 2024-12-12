@@ -18,7 +18,7 @@ pipeline {
         NEXUS_REPO_ID = "demo-release"
         NEXUS_CREDENTIAL_ID = "nexus_credentials"
         ARTVERSION = "${env.BUILD_ID}"
-        TOMCAT_URL = "http://13.127.156.196:8080"
+        TOMCAT_URL = "http://43.204.147.153:8080"
         TOMCAT_CREDENTIAL_ID = "tomcat_credentials"
     }
 
