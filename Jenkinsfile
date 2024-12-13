@@ -95,21 +95,26 @@ pipeline {
 stage('DEPLOY TO TOMCAT') {
     steps {
         script {
-            // Stop the app if it is running, to avoid issues with overwriting files
-            sh """
-                curl -u ${TOMCAT_USER}:${TOMCAT_PASS} ${TOMCAT_URL}/manager/text/undeploy?path=/vprofile
-            """
-            
-            // Deploy the new WAR file to the webapps directory
-            tomcatDeploy(
-                credentialsId: "${TOMCAT_CREDENTIAL_ID}",
-                war: 'target/vprofile-v2.war',
-                path: '/vprofile',  // This ensures the WAR is deployed under /vprofile context in the webapps directory
-                url: "${TOMCAT_URL}/manager/text/deploy",
-                update: true
-            )
+            // Use the 'withCredentials' block to bind the credentials
+            withCredentials([usernamePassword(credentialsId: "${TOMCAT_CREDENTIAL_ID}", usernameVariable: 'TOMCAT_USER', passwordVariable: 'TOMCAT_PASS')]) {
+                
+                // Stop the app if it is running
+                sh """
+                    curl -u ${TOMCAT_USER}:${TOMCAT_PASS} ${TOMCAT_URL}/manager/text/undeploy?path=/vprofile
+                """
+                
+                // Deploy the new WAR file to Tomcat
+                tomcatDeploy(
+                    credentialsId: "${TOMCAT_CREDENTIAL_ID}",
+                    war: 'target/vprofile-v2.war',
+                    path: '/vprofile',  // Tomcat automatically handles the deployment to webapps
+                    url: "${TOMCAT_URL}/manager/text/deploy",
+                    update: true
+                )
+            }
         }
     }
 }
+
     }
 }
