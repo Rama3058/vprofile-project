@@ -104,17 +104,14 @@ stage('DEPLOY TO TOMCAT') {
                 """
                 
                 // Deploy the new WAR file to Tomcat
-                tomcatDeploy(
-                    credentialsId: "${TOMCAT_CREDENTIAL_ID}",
-                    war: 'target/vprofile-v2.war',
-                    path: '/vprofile',  // Tomcat automatically handles the deployment to webapps
-                    url: "${TOMCAT_URL}/manager/text/deploy",
-                    update: true
-                )
+                sh """
+                    curl -u ${TOMCAT_USER}:${TOMCAT_PASS} -T target/vprofile-v2.war ${TOMCAT_URL}/manager/text/deploy?path=/vprofile&update=true
+                """
             }
         }
     }
 }
+
 
     }
 }
